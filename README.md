@@ -31,7 +31,7 @@
    - Е допълнителен пакет, както админа
    - Дава ни permissions, groups, users
    - Cookie Based user session handling
-      - При логин Django създава ключ към сесията и го пази в coоkie, което пази в таблица django_session бекенда и на всяка заявка го изпраща и сравнява със session middleware, за да знае от кой е изпратено
+      - При логин `Django` създава ключ към сесията и го пази в coоkie, което пази в таблица django_session бекенда и на всяка заявка го изпраща и сравнява със session middleware, за да знае от кой е изпратено
       - SESSION_COOKIE_HTTPONLY = True - позволява изпращането на session_key само през https
       - CSRF_COOKIE_HTTPONLY = True - Не позволява на бразъра да достъпва кукито през document.cookie 
    - AuthMiddleware взима потребителя
