@@ -24,7 +24,7 @@
 
 2. Видове credentials
    - Потребителско име и парола - Single-factor authentication
-   - телефонен номер, на който се изпраща парола - Multi-factor authentication
+   - Tелефонен номер, на който се изпраща парола - Multi-factor authentication
  
 3. Authentication in Django
    - django.contrib.auth
