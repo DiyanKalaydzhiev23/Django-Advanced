@@ -91,7 +91,7 @@ DATABASES = {
 
 AUTHENTICATION_BACKENDS = [
     'forumApp.accounts.authentication.EmailOrUsernameBackend',
-    'django.contrib.auth.backends.ModelBackend',  # not really needed because we check for username in the email or username but it's safer to have it
+    'django.contrib.auth.backends.ModelBackend',
 ]
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -124,7 +124,6 @@ USE_TZ = True
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
 CRISPY_TEMPLATE_PACK = "bootstrap4"
-
 
 STATIC_URL = 'static/'
 

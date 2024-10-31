@@ -10,7 +10,15 @@
             {% for post in posts %}
                 <a id="post-url" href="{% url 'details-post' post.pk %}">
                     <div class="post">
-                        <h2>{{ post.title|capfirst }}</h2>
+                        <h2>
+                            {{ post.title|capfirst }}
+                        {% if not post.approved %}
+                            {% if 'posts.can_approve_posts' in request.user.get_group_permissions or perms.posts.can_do_approve %}
+                                <a href="{% url 'approve' post.pk %}"><i class="ai-check"></i></a>
+                            {% endif %}
+                        {% endif %}
+                        </h2>
+
 
                         {% if not post.content %}
                             {% lorem 3 p %}
