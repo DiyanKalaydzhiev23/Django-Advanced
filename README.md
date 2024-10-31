@@ -13,6 +13,11 @@
 
 ---
 
+- [User Model and Password Management](https://forms.gle/kuLJxNqj3AE2sn9h9)
+
+
+---
+
 # Plans
 
 
@@ -67,4 +72,70 @@
    8. Фишинг/Социално инженерство (Phishing/Social Engineering)
       - Фишингът и социалното инженерство са методи, при които нападателят измамно убеждава потребителя да разкрие чувствителна информация (като пароли или номера на кредитни карти) или да извърши определено действие (като инсталиране на зловреден софтуер), като се представя за доверено лице или организация.
    
+---
+
+### User Model and Password Management
+
+1. Built-in Django User
+   - User(AbstractUser)
+     - Може да бъде намерен в моделите на django.auth app-a
+     - таблица auth_users
+     - Имаме го във всяка заявка и можем да го достъпим с request.user
+     - Django ни позволява да променяме вградения потребителски модел на няколко нива
+       - Можем само да го надградим наследявайки AbstractUser или изцяло да го заменим наследявайки AbstractBaseUser
+     - Дава ни PermissionsMixin, който вграденият User модел наследява.
+       - Той се грижи за това дали потребителя е superuser, какви права има и в какви групи е
+       - Дава ни **staff_member_required** декоратор
+     - USERNAME_FIELD ни позволява да презапишем полете, което ще се използва за първи креденшъл
+     - email_user() ни позволява да изпращаме имейли на потребителите след настройка на SMTP
+     - **AnonymusUser**, който не е модел, но клас, който презаписва всички атрибути на базовия клас
+     - Дава ни 2 основни функции
+       - login - закача cookie за аутентикирания  потребител
+       - authenticate - проверява дали креденшълите на потребителя са верни
+     - get_user_model() - дава ни модела, който се използва за user в апликацията
+
+2. Login
+   - Django ни дава готово **LoginView**
+   - Когато ползваме LoginView получаваме следните параметри:
+     - next - помага ни да редиректнем потребителя към view-то, което се е опитал да достъпи преди да е бил логнат
+     - site - url-a на уебсайта
+  
+3. Register
+   - Нямаме view за регистрация, но имаме форма
+   ```py
+   class UserRegisterView(CreateView):
+       form_class = UserCreationForm
+       template_name = 'registration/register.html'
+       success_url = reverse_lazy('login')
+
+
+   # settings.py - optional
+   LOGIN_REDIRECT_URL = '/'
+   LOGOUT_REDIRECT_URL = '/'
+
+    <form method="post" action="{% url 'login' %}{% if next %}?next={{ next }}{% endif %}">
+     {% csrf_token %}
+     {{ form.as_p }}
+     <button type="submit">Login</button>
+    </form>
+
+
+   ```
+   - Формата обаче работи само с User-a от Django, но има как да променим това
+   ```py
+      class CustomUserCreationForm(UserCreationForm):
+          class Meta(UserCreationForm.Meta):
+              model = get_user_model()  # Use the custom user model
+              fields = ('username', 'email') 
+   ```
+
+4. Passowords
+   - Използват one-way hash
+   - Имаме Views за промяна на паролите
+  
+5. Groups
+   - has_perm()
+   - PermissionsMixin
+   - permission_required() - декоратор
+
 ---
