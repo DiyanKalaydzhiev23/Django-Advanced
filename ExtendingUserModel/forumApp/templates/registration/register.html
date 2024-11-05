@@ -1,0 +1,9 @@
+{% extends 'common/base.html' %}
+
+{% block content %}
+    <form method="post">
+        {% csrf_token %}
+        {{ form }}
+        <button class="btn btn-primary ml-2">Register</button>
+    </form>
+{% endblock %}
