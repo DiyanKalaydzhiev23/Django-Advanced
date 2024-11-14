@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Books API</title>
+</head>
+<body>
+    <h1>Books API</h1>
+
+    <h2>List All Books</h2>
+    <button onclick="getAllBooks()">Fetch All Books</button>
+    <ul id="booksList"></ul>
+
+    <h2>Create a New Book</h2>
+    <form id="createBookForm" onsubmit="createBook(event)">
+        <label>Title: <input type="text" id="title" required></label><br>
+        <label>Pages: <input type="number" id="pages" required></label><br>
+        <label>Description: <input type="text" id="description"></label><br>
+        <label>Author: <input type="text" id="author" required></label><br>
+        <button type="submit">Create Book</button>
+    </form>
+
+    <h2>Get, Update, or Delete a Book by ID</h2>
+    <input type="number" id="bookId" placeholder="Enter Book ID">
+    <button onclick="getBook()">Get Book</button>
+    <button onclick="updateBook()">Update Book</button>
+    <button onclick="deleteBook()">Delete Book</button>
+
+    <div id="bookDetails"></div>
+
+    <script>
+        const apiUrl = 'http://localhost:8000/books/';
+
+        // Fetch all books
+        async function getAllBooks() {
+            try {
+                const response = await fetch(apiUrl);
+                const books = await response.json();
+                const booksList = document.getElementById('booksList');
+                booksList.innerHTML = '';
+                books.forEach(book => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `ID: ${book.id}, Title: ${book.title}, Author: ${book.author}`;
+                    booksList.appendChild(listItem);
+                });
+            } catch (error) {
+                console.error('Error fetching books:', error);
+            }
+        }
+
+        // Create a new book
+        async function createBook(event) {
+            event.preventDefault();
+            const title = document.getElementById('title').value;
+            const pages = document.getElementById('pages').value;
+            const description = document.getElementById('description').value;
+            const author = document.getElementById('author').value;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title, pages, description, author })
+                });
+                const newBook = await response.json();
+                alert('Book created: ' + JSON.stringify(newBook));
+                getAllBooks();
+            } catch (error) {
+                console.error('Error creating book:', error);
+            }
+        }
+
+        // Fetch a single book by ID
+        async function getBook() {
+            const bookId = document.getElementById('bookId').value;
+            if (!bookId) {
+                alert('Please enter a Book ID.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${apiUrl}${bookId}/`);
+                if (response.status === 404) {
+                    alert('Book not found');
+                    return;
+                }
+                const book = await response.json();
+                document.getElementById('bookDetails').textContent = JSON.stringify(book);
+            } catch (error) {
+                console.error('Error fetching book:', error);
+            }
+        }
+
+        // Update a book by ID
+        async function updateBook() {
+            const bookId = document.getElementById('bookId').value;
+            if (!bookId) {
+                alert('Please enter a Book ID.');
+                return;
+            }
+
+            const title = prompt('Enter new title:');
+            const pages = prompt('Enter new number of pages:');
+            const description = prompt('Enter new description:');
+            const author = prompt('Enter new author:');
+
+            try {
+                const response = await fetch(`${apiUrl}${bookId}/`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title, pages, description, author })
+                });
+                if (response.status === 404) {
+                    alert('Book not found');
+                    return;
+                }
+                const updatedBook = await response.json();
+                alert('Book updated: ' + JSON.stringify(updatedBook));
+                getAllBooks();
+            } catch (error) {
+                console.error('Error updating book:', error);
+            }
+        }
+
+        // Delete a book by ID
+        async function deleteBook() {
+            const bookId = document.getElementById('bookId').value;
+            if (!bookId) {
+                alert('Please enter a Book ID.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${apiUrl}${bookId}/`, {
+                    method: 'DELETE'
+                });
+                if (response.status === 404) {
+                    alert('Book not found');
+                    return;
+                }
+                alert('Book deleted');
+                getAllBooks();
+            } catch (error) {
+                console.error('Error deleting book:', error);
+            }
+        }
+    </script>
+</body>
+</html>
+
