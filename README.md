@@ -5,6 +5,10 @@
 ### Workshops
 - [Petstagram Repo](https://github.com/DiyanKalaydzhiev23/petstagram-2024.git)
 
+### Django REST JWT FE
+
+- [Django REST FE](https://github.com/DiyanKalaydzhiev23/JWT-Django-REST-FE-Softuni)
+
 ---
 
 ### Theory Tests
