@@ -1,0 +1,13 @@
+{% extends 'common/base.html' %}
+
+{% block content %}
+    <h1 style="color: #405cf5;">Login</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form }}
+        <button class="button-9">Submit</button>
+        <div class="mt-3">
+            <a class="text-center" href="{% url 'register' %}">Don't have an account? Create one here</a>
+        </div>
+    </form>
+{% endblock %}
