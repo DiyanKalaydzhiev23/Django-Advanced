@@ -1,0 +1,59 @@
+<ul class="menu">
+    <li class="menu-item">
+        <a href="{% url 'index' %}" class="menu-link">
+            <i class="ai-home"></i>
+            <span>Home</span>
+        </a>
+    </li>
+    <li class="menu-item">
+        <a href="{% url 'dashboard' %}" class="menu-link">
+            <i class="ai-file"></i>
+            <span>Dashboard</span>
+        </a>
+    </li>
+    <li class="menu-item">
+        <a href="{% url 'add-post' %}" class="menu-link">
+            <i class="ai-circle-plus"></i>
+            <span>Add post</span>
+        </a>
+    </li>
+    {% if request.user.is_authenticated %}
+        <li class="menu-item">
+            <a onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="menu-link">
+                <i class="ai-arrow-left-thick"></i>
+                <span>Logout</span>
+            </a>
+        </li>
+    {% else %}
+        <li class="menu-item">
+            <a href="{% url 'login' %}" class="menu-link">
+                <i class="ai-arrow-right-thick"></i>
+                <span>Login</span>
+            </a>
+        </li>
+    {% endif %}
+    <li class="menu-item">
+        <a href="#" class="menu-link">
+            <i class="ai-bell"></i>
+            <span>Notifications</span>
+        </a>
+    </li>
+    <li class="menu-item">    
+        <a href="#" class="menu-link">
+            <i class="ai-gear"></i>
+            <span>Settings</span>
+        </a>
+    </li>
+    <li class="menu-item">
+        <a href="#" class="menu-link">
+            <i class="ai-person"></i>
+            <span>Profile</span>
+        </a>
+    </li>
+</ul>
+
+
+<form style="display: none;" id="logout-form" action="{% url 'logout' %}" method="post">
+    {% csrf_token %}
+    <button>logout</button>
+</form>
