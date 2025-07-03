@@ -21,7 +21,7 @@
 # Plans
 
 
-### Authentication and Autorization
+### Authentication and Authorization
 
 1. Какво означават?
    - Ауторизация е проверката за това какви права иначе като потребители
