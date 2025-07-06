@@ -18,6 +18,10 @@
 
 ---
 
+- [Middlewares and Sessions](https://forms.gle/QdK1qzN3qo4HfkU3A)
+
+---
+
 # Plans
 
 
@@ -367,4 +371,150 @@
               import accounts.signals
    ```
    
+---
+
+
+---
+
+
+### Django Middlewares and Sessions
+
+1. Какво е Middleware?
+   - Функционалност, която се изпълнява преди и/или след **всеки** рекуест
+   - Доста наподобява това да направим миксин, но с middleware-a няма нужда да го наследяваме никъде. Тоест става абстрактно.
+   - Реда на изпълнение е важен
+   - Middleware-ите се изпълняват top-down, преди заявката и bottom up след нея.
+   - Задава се в `settings.py`
+   ```py
+   MIDDLEWARES = [
+      ...,
+      Path.to.your.callable,  # callable - something that overwrites the method __call__
+      ...,
+   ]
+   ```
+
+   - Template for function middleware
+   ```py
+      def measure_time(get_response):
+         def middleware(request, *args, **kwargs): // looks like view
+            result = get_response()
+
+            return result
+
+      return middleware
+   ```
+
+   - Example
+   ```py
+      def measure_time(get_response):
+         def middleware(request, *args, **kwargs): // looks like view
+            start_time = time.time()
+            result = get_response(request)
+            end_time = time.time()
+
+            print(f"{request.path} executed in {end_time - start_time} seconds.")
+   
+            return result
+
+      return middleware
+   ```
+
+   - С клас
+   ```py
+   import time
+
+   class RequestTimingMiddleware(MiddlewareMixin):
+       """
+       Middleware to measure the time taken to process a request using process_request and process_response.
+       """
+
+       def __init__(self, get_response):
+           self.get_response = get_response
+   
+       def process_request(self, request):
+           # Start time before processing the request
+           self.start_time = time.time()
+   
+       def process_response(self, request, response):
+           # End time after processing the request
+           end_time = time.time()
+   
+           # Calculate the duration
+           duration = end_time - self.start_time
+   
+           # Log the duration (you can use any logging mechanism here)
+           print(f"Request to {request.path} took {duration:.4f} seconds.")
+   
+           return response
+
+   ```
+
+   - Освен process_request и process_response, имаме и process_view, което ни позволява да изпълняваме код точно преди view-то да се изпълни
+   - С други думи. Всеки middleware се вика три пъти. Преди request, точно преди view и след request.
+
+2. Session
+   - HTTP e stateless - не пази никаква информация, всяка заявка е сама за себе си.
+   - Сесията е начин по който сървъра може да пази информация за user-a.
+   - Сесията в Django е базово имплементирана.
+   - Имаме таблица `django_session`, която пази ключ- session key, който се подава на клиента, session_data - стойност с информация за потребителя, и expiration_date - дата, в която тази сесия изтича (default 2 седмици).
+   - Ако се логне от два браузъра, ще имаме две сесии за един потребител
+   - Сесията в базата е сериализирана, но когато я достъпваме във view тя се десериализира и можем да я третираме като обект
+   - Ключовете на обекти в сесията трябва да се string-ове и да нямат специални символи
+   ```py
+   def view_counter(request): 
+    # Check if the 'counter' key exists in the session
+    if 'counter' in request.session:
+        # Increment the counter
+        request.session['counter'] += 1
+    else:
+        # Initialize the counter if it's the first visit
+        request.session['counter'] = 1 
+
+    counter = request.session['counter']
+
+    return HttpResponse(f"View count: {counter}")
+   ```
+
+3. Cookies
+   - Метаданни за даннте
+   - Браузъра ги праща на всяка заявка, към домейна за който са заяазени
+   - Пример: cookie sessionId запазено за localhost, всеки път ще праща сесията
+   - Cookie-та без дата на изтичане се изтриват на изтичане на сесията на браузъра
+   - Няма как да направим вечно куки
+   - `request.COOKIES`
+   ```py
+   from django.http import HttpResponse
+   from django.utils.timezone import now
+   from django.views import View
+   
+   class SetTimeCookieView(View):
+       def dispatch(self, request, *args, **kwargs):
+           # Call the parent dispatch method to get the response
+           response = super().dispatch(request, *args, **kwargs)
+   
+           # Get the current time
+           current_time = now()
+   
+           # Check if the 'last_visit' cookie exists
+           last_visit = request.COOKIES.get('last_visit')
+           if last_visit:
+               # If the cookie exists, add a message about the last visit time
+               response.content += f"Your last visit was on: {last_visit}<br>".encode()
+           else:
+               # If this is the first visit, add a message indicating that
+               response.content += "This is your first visit!<br>".encode()
+   
+           # Set the current time as a cookie named 'last_visit'
+           response.set_cookie('last_visit', current_time.strftime('%Y-%m-%d %H:%M:%S'))
+   
+           # Optionally, set the cookie to expire in a certain number of seconds (e.g., 1 day)
+           # response.set_cookie('last_visit', current_time.strftime('%Y-%m-%d %H:%M:%S'), max_age=86400)
+   
+           # Add a message about setting the cookie
+           response.content += f"Setting the current time ({current_time.strftime('%Y-%m-%d %H:%M:%S')}) as a cookie.".encode()
+   
+           return response
+
+   ```
+
 ---
