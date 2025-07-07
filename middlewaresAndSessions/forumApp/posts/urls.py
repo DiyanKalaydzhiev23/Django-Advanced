@@ -2,7 +2,7 @@ from django.urls import path, include
 from posts import views
 
 urlpatterns = [
-    path('', views.IndexView.as_view(), name='index'),
+    path('', views.counter_view, name='index'),
     path('dashboard/', views.Dashboard.as_view(), name='dashboard'),
     path('post/', include([
         path('add/', views.CreatePost.as_view(), name='add-post'),
