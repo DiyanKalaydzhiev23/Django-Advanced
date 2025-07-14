@@ -26,6 +26,10 @@
 
 ---
 
+- [Django REST Advanced](https://forms.gle/h5TvbecgszVhjfau5)
+
+---
+
 # Plans
 
 
@@ -781,3 +785,291 @@
    ```
    
 ---
+
+
+---
+
+### Django REST Advanced
+
+1. Видове сериалайзъри
+   1. Serializer
+      - Това е базовият клас за създаване на serializers. В него ръчно дефинирате полетата и начините за обработка на данните.
+     ```py
+         from rest_framework import serializers
+         
+         class UserSerializer(serializers.Serializer):
+             username = serializers.CharField(max_length=100)
+             email = serializers.EmailField()
+             is_active = serializers.BooleanField()
+         
+         # Сериализиране на данни:
+         user_data = {
+             "username": "john",
+             "email": "john@example.com",
+             "is_active": True
+         }
+         serializer = UserSerializer(data=user_data)
+         if serializer.is_valid():
+             print(serializer.validated_data)
+     ```
+
+   2. ModelSerializer
+      - ModelSerializer е опростена версия на Serializer, която автоматично създава полетата въз основа на Django модела. Спестява време при сериализация на данни от модели.
+      ```py
+         from rest_framework import serializers
+         from myapp.models import User
+         
+         class UserSerializer(serializers.ModelSerializer):
+             class Meta:
+                 model = User
+                 fields = ['username', 'email', 'is_active']
+
+      ```
+   3. ListSerializer
+      - ListSerializer се използва за сериализация на списъци с обекти. Обикновено той се използва вътрешно от Django REST Framework, когато сериализирате множество обекти, но може да бъде дефиниран и ръчно.
+      ```py
+      from rest_framework import serializers
+
+      class UserSerializer(serializers.Serializer):
+          username = serializers.CharField(max_length=100)
+      
+      class UserListSerializer(serializers.ListSerializer):
+          child = UserSerializer()
+      
+      data = [
+          {"username": "john"},
+          {"username": "jane"}
+      ]
+      serializer = UserListSerializer(data=data)
+      if serializer.is_valid():
+          print(serializer.validated_data)
+      ```
+
+   4. HyperlinkedModelSerializer
+      - HyperlinkedModelSerializer е подобен на ModelSerializer, но вместо да използва PrimaryKeyRelatedField за релации, използва HyperlinkedIdentityField за URL връзки към други ресурси.
+      ```py
+      from rest_framework import serializers
+      from myapp.models import User
+      
+      class UserSerializer(serializers.HyperlinkedModelSerializer):
+          class Meta:
+              model = User
+              fields = ['url', 'username', 'email', 'is_active']
+      ```
+   5. SlugRelatedField
+      - SlugRelatedField се използва за релации, като свързва други модели чрез техните уникални полета (например slug поле).
+      ```py
+      from rest_framework import serializers
+      from myapp.models import Post, Category
+      
+      class PostSerializer(serializers.ModelSerializer):
+          category = serializers.SlugRelatedField(slug_field='name', queryset=Category.objects.all())
+      
+          class Meta:
+              model = Post
+              fields = ['title', 'content', 'category']
+      ```
+   6. PrimaryKeyRelatedField
+      - Този сериалайзер използва първичния ключ за релации между модели.
+      ```py
+      from rest_framework import serializers
+      from myapp.models import Post, Category
+      
+      class PostSerializer(serializers.ModelSerializer):
+          category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
+      
+          class Meta:
+              model = Post
+              fields = ['title', 'content', 'category']
+
+      ```
+
+   7. StringRelatedField
+      - StringRelatedField показва релациите като низове, базирани на __str__() метода на свързания модел.
+      ```py
+         from rest_framework import serializers
+         from myapp.models import Post
+         
+         class PostSerializer(serializers.ModelSerializer):
+             category = serializers.StringRelatedField()
+         
+             class Meta:
+                 model = Post
+                 fields = ['title', 'content', 'category']
+      ```
+
+   8. SerializerMethodField
+      - Този тип поле ви позволява да дефинирате метод в сериалайзера, който връща данни в сериализирана форма.
+      ```py
+      from rest_framework import serializers
+      from myapp.models import User
+      
+      class UserSerializer(serializers.ModelSerializer):
+          full_name = serializers.SerializerMethodField()
+      
+          class Meta:
+              model = User
+              fields = ['username', 'email', 'full_name']
+      
+          def get_full_name(self, obj):
+              return f"{obj.first_name} {obj.last_name}"
+
+      ```
+
+   9. HiddenField
+      - Поле, което се използва за предаване на стойности, които не се показват в сериализацията (например стойности, които се запълват автоматично).
+      ```py
+      from rest_framework import serializers
+      
+      class CommentSerializer(serializers.ModelSerializer):
+          created_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
+      
+          class Meta:
+              model = Comment
+              fields = ['text', 'created_by']
+      ```
+
+2. Generic Views
+   - Можем да ги комбинираме, тоест можем да имаме RetrieveDestroyView, което има get и delete
+
+3. Actions
+   - Шаблон за създаване на urls в REST
+   - Пример: Имаме книги и всяка книга може да има коментар
+   - Грешно: api/books/4 - където 4 е id-то на книгата
+   - Правилно: api/books/4/comment - това наричаме акшън, по този начин няма объркване на какво принадлежи id-то
+
+4. Authentication
+   - `rest_framework.authtoken`
+   - Апп, който съдържа едно view ObtainAuthToken
+     - Тук можем да генерираме токън за съществуващ наш потребител
+   - Login
+     ```py
+     class LoginAPIView(token_views.ObtainAuthToken)
+        pass
+     ```
+   - Register
+     ```py
+      from django.contrib.auth import get_user_model
+      from rest_framework import serializers
+      
+      UserModel = get_user_model()
+      
+      class RegisterSerializer(serializers.ModelSerializer):
+          password = serializers.CharField(write_only=True)  # Prevent password from being read
+      
+          class Meta:
+              model = UserModel
+              fields = ['username', 'email', 'password']  # Adjust fields based on your User model
+      
+          def create(self, validated_data):
+              # Use the create_user method to create a user
+              user = UserModel.objects.create_user(
+                  username=validated_data['username'],
+                  email=validated_data['email'],
+                  password=validated_data['password']  # create_user automatically handles hashing
+              )
+              return user
+
+      from django.contrib.auth import get_user_model
+      from rest_framework import generics
+      from rest_framework.response import Response
+      from rest_framework import status
+      
+      UserModel = get_user_model()
+      
+      class RegisterApiView(generics.CreateAPIView):
+          queryset = UserModel.objects.all()
+          serializer_class = RegisterSerializer
+     ```
+
+5. Permissions
+   - Можем да използваме mixins от django, но е по-прието да използваме permission classes
+      - IsAuthenticated
+      - AllowAny
+      - IsAdminUser
+      - IsAuthenticatedOrReadOnly
+      - BasePermission (for creating custom permissions)
+   ```py
+   from rest_framework.permissions import BasePermission
+   
+   class IsOwner(BasePermission):
+       """
+       Custom permission to only allow owners of an object to access or modify it.
+       """
+       def has_object_permission(self, request, view, obj):
+           # Assumes the object has an 'owner' attribute. You can adjust this as needed.
+           return obj.owner == request.user
+
+   class MyModelDetailView(generics.RetrieveUpdateDestroyAPIView):
+       queryset = MyModel.objects.all()
+       serializer_class = MyModelSerializer
+       permission_classes = [IsOwner]  # Use the custom permission
+   
+   ```
+    
+6. Exceptions
+   - Персонализирани грешки
+   ```py
+      class NotOwnerException(APIException):
+          status_code = 403  # HTTP status code for Forbidden
+          default_detail = "You do not have permission to perform this action."  # Default error message
+          default_code = 'not_owner'
+   ```
+   - Custom handler
+   ```py
+   from rest_framework.views import exception_handler  # Import the default DRF exception handler
+   from rest_framework.response import Response  # Import DRF's Response class
+   from rest_framework.exceptions import APIException  # Import DRF's base API exception
+   from rest_framework import status  # Import status codes
+   
+   def custom_exception_handler(exc, context):
+       """
+       Custom exception handler to modify the response for exceptions.
+       
+       Args:
+       - exc: The exception instance that was raised.
+       - context: A dictionary containing information about the context in which the exception was raised (including the view).
+       
+       Returns:
+       - Response: A DRF Response object that modifies the error response.
+       """
+   
+       # Call DRF's default exception handler first, to get the standard error response.
+       response = exception_handler(exc, context)
+       
+       # If the response is not None, it means DRF has already handled the exception.
+       if response is not None:
+           # Modify the response for custom behavior (if needed)
+           # You can add custom data or wrap the error in a different structure.
+           
+           # Example: Adding a custom error message or structure to the response
+           response.data['status_code'] = response.status_code  # Add status code to the response
+           response.data['error_type'] = exc.__class__.__name__  # Add the type of exception to the response
+           
+           # Optionally, you could modify specific responses for certain exceptions
+           if isinstance(exc, APIException):
+               # Handle general APIException separately (e.g., add more context)
+               response.data['detail'] = str(exc)  # Add the exception message as 'detail'
+       
+       else:
+           # If the response is None, it means DRF's default handler didn't handle this exception.
+           # You can create a custom response here.
+           
+           # Example: Creating a custom response for unhandled exceptions
+           return Response({
+               "detail": "Something went wrong",  # Custom error message
+               "error": str(exc),  # Include the string representation of the exception
+               "error_type": exc.__class__.__name__,  # Include the type of the exception
+           }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  # Return 500 status for server errors
+       
+       # Return the modified response or the original response from the default handler.
+       return response
+
+   // settings.py
+   REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'your_project.your_module.custom_exception_handler',  # Replace with your actual path
+   }
+
+   ```
+---
+
