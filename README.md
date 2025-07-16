@@ -3,6 +3,7 @@
 
 ### Workshops
 - [Petstagram Repo](https://github.com/DiyanKalaydzhiev23/petstagram-2024.git)
+- [Rest Client](https://github.com/DiyanKalaydzhiev23/JWT-Django-REST-FE-Softuni)
 
 ### Theory Tests
 
