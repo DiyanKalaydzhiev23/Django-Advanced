@@ -31,6 +31,10 @@
 
 ---
 
+- [Asynchronous Operations](https://forms.gle/jbcABaRa4LmEK6rcA)
+
+---
+
 # Plans
 
 
@@ -1073,4 +1077,179 @@
 
    ```
 ---
+
+
+---
+
+### Async Operations
+
+1. Django по дефиниция е синхронно
+   - Много потребители изпращат заявка към един сървър едновреммено.
+   - Django създава потоци, които се изпълняват последователно, за всеки един от тях
+   - Те могат и да се изпълняват и паралено, ако направим такава настеойка на нашия уеб сървърщ
+
+2. Синхронно програмиране
+   - Действията се изпълняват едно след друго
+   ```py
+   import time
+
+   def get_milk():
+       print("Servant is going to get milk...")
+       time.sleep(1)  # Simulates 1 second to get milk
+       print("Servant got the milk.")
+   
+   def get_coffee():
+       print("Servant is going to get coffee...")
+       time.sleep(1.5)  # Simulates 1.5 seconds to get coffee
+       print("Servant got the coffee.")
+   
+   def prepare_drink():
+       print("Servant is preparing the drink...")
+       time.sleep(0.5)  # Simulates 0.5 seconds to prepare the drink
+       print("Servant prepared the drink.")
+   
+   def serve():
+       start_time = time.time()
+   
+       get_milk()
+       get_coffee()
+       prepare_drink()
+   
+       total_time = time.time() - start_time
+       print(f"Total time taken: {total_time:.2f} seconds")
+   
+   if __name__ == "__main__":
+       serve()
+   ```
+
+3. Асинхронни операции
+   - Действията се изпълняват едновреммено
+   ```py
+   import asyncio
+   import time
+   
+   async def get_milk():
+       print("Servant is going to get milk...")
+       await asyncio.sleep(1)  # Simulates 1 second to get milk
+       print("Servant got the milk.")
+   
+   async def get_coffee():
+       print("Servant is going to get coffee...")
+       await asyncio.sleep(1.5)  # Simulates 1.5 seconds to get coffee
+       print("Servant got the coffee.")
+   
+   async def prepare_drink():
+       print("Servant is preparing the drink...")
+       await asyncio.sleep(0.5)  # Simulates 0.5 seconds to prepare the drink
+       print("Servant prepared the drink.")
+   
+   async def serve():
+       start_time = time.time()
+   
+       # Run get_milk and get_coffee concurrently
+       await asyncio.gather(get_milk(), get_coffee())
+   
+       # Prepare the drink after both tasks are complete
+       await prepare_drink()
+   
+       total_time = time.time() - start_time
+       print(f"Total time taken: {total_time:.2f} seconds")
+
+   async def main():
+      await asyncio.gather(*[serve(i) for i in range 10])
+   
+   if __name__ == "__main__":
+       asyncio.run(main())
+```
+
+4. Celery
+   - Опашка от задачи
+   - Многопроцесорно
+   - Както ORM-a на Django е wrapper към всички бази, които ние можем да използваме
+   - Така celery e wrapper върху message-broker
+   - pip install celery
+
+5. Multithreading vs Multiprocessing
+   - Многонишковост означава, че няколко нишки (threads) работят паралелно в рамките на един и същ процес, като споделят една и съща памет, което е подходящо за задачи, свързани с вход/изход (I/O-bound). Многопроцесност означава, че се създават няколко процеса, всеки със собствена памет, което позволява истински паралелизъм и е по-подходящо за задачи, натоварващи процесора (CPU-bound).
+
+6. Redis
+  - In memory база от данни
+  - Живее в рам паметта
+
+7. SetUp
+   - Нов файл celery.py в нашия проект
+   - pip install celery[redis]
+
+   ```py
+   from __future__ import absolute_import, unicode_literals
+   import os
+   from celery import Celery
+   
+   # Set the default Django settings module for the 'celery' program.
+   os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project_name.settings')
+   
+   # Create the Celery app and configure it.
+   app = Celery('project_name')
+   
+   # Load the config from Django's settings file.
+   app.config_from_object('django.conf:settings', namespace='CELERY')
+   
+   # Auto-discover tasks from all registered Django app configs.
+   app.autodiscover_tasks()
+   
+   @app.task(bind=True)
+   def debug_task(self):
+       print(f'Request: {self.request!r}')
+
+   ```
+
+   - В инита на проекта
+   ```py
+   from __future__ import absolute_import, unicode_literals
+   
+   # This will make sure the app is always imported when
+   # Django starts so that shared_task will use this app.
+   from .celery import app as celery_app
+   
+   __all__ = ('celery_app',)
+   ```
+
+   - В настройките
+   ```py
+   # Celery settings
+   
+   # Using Redis as the broker
+   CELERY_BROKER_URL = 'redis://localhost:6379/0'
+   
+   # Optional configurations for Celery
+   CELERY_ACCEPT_CONTENT = ['json']
+   CELERY_TASK_SERIALIZER = 'json'
+   CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # Using Redis as the result backend
+   CELERY_TIMEZONE = 'UTC'
+   ```
+
+   - В tasks.py
+   ```py
+   from celery import shared_task
+   import time
+   
+   @shared_task
+   def add(x, y):
+       return x + y
+   
+   @shared_task
+   def sleepy_task(duration):
+       time.sleep(duration)
+       return 'Slept for {} seconds'.format(duration)
+
+   ```
+
+   - стартиране
+   - celery -A project_name worker --loglevel=info
+
+   - Викане на таск
+   - sleepy_task.delay()
+
+---
+
 
