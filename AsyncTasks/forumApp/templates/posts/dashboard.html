@@ -1,0 +1,63 @@
+{% extends 'common/base.html' %}
+{% load markdown_extras %}
+
+{% block content %}
+    {% include 'common/nav.html' %}
+
+    <div class="container">
+        {% include 'posts/search-form.html' %}
+        <div class="posts">
+            {% for post in posts %}
+                <a id="post-url" href="{% url 'details-post' post.pk %}">
+                    <div class="post">
+                        <h2>
+                            {{ post.title|capfirst }}
+                        {% if not post.approved %}
+                            {% if 'posts.can_approve_posts' in request.user.get_group_permissions or perms.posts.can_do_approve %}
+                                <a href="{% url 'approve' post.pk %}"><i class="ai-check"></i></a>
+                            {% endif %}
+                        {% endif %}
+                        </h2>
+
+
+                        {% if not post.content %}
+                            {% lorem 3 p %}
+                        {% else %}
+                            {{ post.content|markdown|capfirst }}
+                        {% endif %}
+
+                        <div class="post-meta">
+                            <span>Posted by {{ post.author|default:"anonymous" }} on {{ post.created_at|date:"d-M-Y" }}</span>
+                        </div>
+                    </div>
+                </a>
+
+            {% empty %}
+                <h1 class="no-posts">No Posts</h1>
+            {% endfor %}
+
+        
+            {% if not page_obj.has_next and page_obj.number == 1 %}
+                <p>That's the only page</p>
+            {% else %}
+                <div class="pagination">
+                    <span class="step-links">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1">&laquo; first</a>
+                            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                        {% endif %}
+                
+                        <span class="current">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                        </span>
+                
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}">next</a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                        {% endif %}
+                    </span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
