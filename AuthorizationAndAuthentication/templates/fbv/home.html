@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+</head>
+<body>
+    <h1>Welcome</h1>
+    {% if request.user.is_authenticated %}
+    <form action="{% url 'logout-cbv' %}" method="post">
+        {% csrf_token %}
+        <button>Logout</button>
+    </form>
+    {% endif %}
+</body>
+</html>
