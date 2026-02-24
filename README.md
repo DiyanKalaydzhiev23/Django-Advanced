@@ -4,6 +4,8 @@
 
 # Plans
 
+- [Authentication and Autorization](https://forms.gle/E63W2cpVYng1fQXU9)
+
 ### Authentication and Autorization
 
 1. Какво означават?
@@ -94,3 +96,4 @@
    - permission_required() - декоратор
 
 ---
+
