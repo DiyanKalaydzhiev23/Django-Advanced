@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ note.title }}</title>
+</head>
+<body>
+    <h1>{{ note.title }}</h1>
+
+    <p>{{ note.body }}</p>
+
+    <p>
+        <small>
+            Owner: {{ note.owner.username }} |
+            Created: {{ note.created_at|date:"Y-m-d H:i" }}
+        </small>
+    </p>
+
+    <p><a href="{% url 'notes:list' %}">Back to Notes</a></p>
+    <p><a href="{% url 'home' %}">Back to Home</a></p>
+</body>
+</html>

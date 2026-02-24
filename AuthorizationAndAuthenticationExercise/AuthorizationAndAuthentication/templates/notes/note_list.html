@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Notes</title>
+</head>
+<body>
+    <h1>My Notes</h1>
+    {% if note_list %}
+        <ul>
+            {% for note in note_list %}
+                <li>
+                    <a href="{% url 'notes:detail' note.pk %}">{{ note }}</a>
+{#                    <small>#}
+{#                        (<a href="{% url 'common:note_edit' note.pk %}">Edit</a> |#}
+{#                        <a href="{% url 'common:note_delete' note.pk %}">Delete</a>)#}
+{#                    </small>#}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No notes yet. Start by creating one!</p>
+    {% endif %}
+{#    <p><a href="{% url 'common:note_create' %}">Create New Note</a></p>#}
+    <p><a href="{% url 'home' %}">Back to Home</a></p>
+</body>
+</html>
