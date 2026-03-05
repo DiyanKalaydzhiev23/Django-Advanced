@@ -6,6 +6,12 @@
 
 - [Authentication and Autorization](https://forms.gle/E63W2cpVYng1fQXU9)
 
+- [Extending User Model](https://forms.gle/yLaStauEmS6iZsKm6)
+
+- [Middlewares and Sessions](https://forms.gle/QdK1qzN3qo4HfkU3A)
+
+---
+
 ### Authentication and Autorization
 
 1. Какво означават?
@@ -96,4 +102,404 @@
    - permission_required() - декоратор
 
 ---
+
+
+---
+
+### Extending the user model
+
+`AUTH_USER_MODEL = 'path.to.my.model'`
+
+ 1. Защо наследяваме AbstractUser, а не USER?
+    - Както помним от Python ORM, ако наследим неабстрактен модел, то ние получаваме 1-To-1 relationship
+    - Докато, ако е абстрактен, получаваме директно полетата в една таблица
+
+2. AbstractUser vs AbstractBaseUser
+   - AbstractUser е user-a, който познаваме, този който Django наследява. Той наследява AbstractBaseUser
+   - AbstractBaseUser съдържа само 2 полета, password и last_login
+  
+3. Начини за наследяване
+   - Чрез Proxy
+     - Pros: 
+        - Можем да добавим методи и мета данни продължавайки да използваме модела от Django
+        - Няма нужда да пренаписваме Django Auth system
+     - Cons:
+        - Не можем да добавяме свои полета
+          
+   - Наследявайки AbstractUser или AbstractBaseUser
+     - Pros:
+        - Можем да добавяме свои полета
+        - Няма нужда да пренаписваме Django Auth system
+     - Cons:
+        - По-трудна миграция към друг auth model в бъдеще (например, ако искаме да сменим Django Sessions с JWT)
+          
+   - Наследяваки User в модел Profile
+     - Създаваки профил към всеки потребител чрез One-to-One
+     - Pros:
+        - Можем да добавяме свои полета
+        - По-лесна миграция към друг auth model в бъдеще (например, ако искаме да сменим Django Sessions с JWT)
+     - Cons:
+        - Трябва да пренаписваме Django Auth system
+      
+      - Може да стане по два начина:
+        - Наследявайки built-in user
+        - Създавайки наш user
+       
+      - Ще ни трябва да променим register платформата
+     ```py
+           class CustomUserCreationForm(UserCreationForm):
+             profile_field = forms.FieldType()
+     
+             class Meta(UserCreationForm.Meta):
+                 model = get_user_model()  # Use the custom user model
+                 fields = ('username', 'email')
+
+              def save(self, commit=True):
+                 user = super().save(commit=commit)
+
+                 profile = Profile(
+                     user=user,
+                     age=self.cleaned_data["age"]
+                 )
+
+                 if commit:
+                    profile.save()
+
+              retrun user
+     ```
+
+4. User с AbstractBaseUser
+   ##### Step 1: Create a model and a manager
+   ```py
+   from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+   from django.db import models
+   from django.utils.translation import gettext_lazy as _
+
+   class CustomUserManager(BaseUserManager):
+       def create_user(self, email, password=None, **extra_fields):
+           if not email:
+               raise ValueError(_('The Email field must be set'))
+           email = self.normalize_email(email)
+           user = self.model(email=email, **extra_fields)
+           user.set_password(password)
+           user.save(using=self._db)
+           return user
+   
+       def create_superuser(self, email, password=None, **extra_fields):
+           extra_fields.setdefault('is_staff', True)
+           extra_fields.setdefault('is_superuser', True)
+   
+           if extra_fields.get('is_staff') is not True:
+               raise ValueError(_('Superuser must have is_staff=True.'))
+           if extra_fields.get('is_superuser') is not True:
+               raise ValueError(_('Superuser must have is_superuser=True.'))
+   
+           return self.create_user(email, password, **extra_fields)
+
+   class CustomUser(AbstractBaseUser, PermissionsMixin):
+       email = models.EmailField(unique=True)
+       first_name = models.CharField(max_length=30, blank=True)
+       last_name = models.CharField(max_length=30, blank=True)
+       is_active = models.BooleanField(default=True)
+       is_staff = models.BooleanField(default=False)
+       date_joined = models.DateTimeField(auto_now_add=True)
+   
+       objects = CustomUserManager()
+   
+       USERNAME_FIELD = 'email'
+       REQUIRED_FIELDS = []
+   
+       def __str__(self):
+           return self.email
+
+   ```
+
+   ##### Step 2: Configure settings
+   ```py
+   AUTH_USER_MODEL = 'accounts.CustomUser'
+   ````
+
+   
+   ##### Step 3: Modify the User Creation Form
+      - In accounts/forms.py, import get_user_model() and use it to define the form class:
+      ```py
+      class CustomUserCreationForm(UserCreationForm):
+          class Meta:
+              model = get_user_model()  # Dynamically get the user model
+              fields = ('email', 'first_name', 'last_name')
+      ```
+
+   ##### Step 4: Update the Registration View
+      - Ensure your registration view is correctly set up to use the CustomUserCreationForm:
+      - In accounts/views.py:
+      ```py
+      class RegisterView(CreateView):
+          form_class = CustomUserCreationForm
+          template_name = 'accounts/register.html'
+          success_url = reverse_lazy('login')
+
+            
+      class CustomLoginView(LoginView):
+          form_class = CustomUserLoginForm
+          template_name = 'accounts/login.html'
+      ```
+
+   ##### Step 5: Admin
+      After creating a custom user model, you also need to configure the Django admin to manage users via the admin interface. 
+      
+      In your `accounts/admin.py`, register your custom user model with the Django admin interface. You need to create a custom `ModelAdmin` class to specify how the model should be displayed in the admin interface.
+      
+      ### `accounts/admin.py`
+      
+      ```python
+         from django.contrib import admin
+         from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+         from django.contrib.auth import get_user_model
+         from django.utils.translation import gettext_lazy as _
+         from .forms import CustomUserCreationForm
+         
+         CustomUser = get_user_model()
+         
+         class CustomUserAdmin(BaseUserAdmin):
+             add_form = CustomUserCreationForm
+             form = CustomUserCreationForm
+             model = CustomUser
+             list_display = ('email', 'first_name', 'last_name', 'is_staff', 'is_active')
+             list_filter = ('is_staff', 'is_active')
+             fieldsets = (
+                 (None, {'fields': ('email', 'password')}),
+                 (_('Personal Info'), {'fields': ('first_name', 'last_name')}),
+                 (_('Permissions'), {'fields': ('is_staff', 'is_active', 'is_superuser', 'groups', 'user_permissions')}),
+                 (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
+             )
+             add_fieldsets = (
+                 (None, {
+                     'classes': ('wide',),
+                     'fields': ('email', 'password1', 'password2', 'first_name', 'last_name', 'is_staff', 'is_active')}
+                 ),
+             )
+             search_fields = ('email',)
+             ordering = ('email',)
+         
+         admin.site.register(CustomUser, CustomUserAdmin)
+      ```
+
+5. Signals
+   - Publish-Subscribe Pattern
+   - Имаме няколко типа сигнали:
+     - model
+     - request
+     - management
+     - etc...
+   - Като се случи някакво събитие да се изпълни даден код
+   ```py
+      # accounts/models.py
+      from django.conf import settings
+      from django.db import models
+      from django.contrib.auth import get_user_model
+      
+      class Profile(models.Model):
+          user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+          bio = models.TextField(blank=True)
+          location = models.CharField(max_length=100, blank=True)
+      
+          def __str__(self):
+              return self.user.email
+
+      # accounts/signals.py
+   
+      from django.db.models.signals import post_save
+      from django.dispatch import receiver
+      from django.conf import settings
+      from .models import Profile
+      
+      @receiver(post_save, sender=settings.AUTH_USER_MODEL)
+      def create_profile(sender, instance, created, **kwargs):
+          if created:
+              Profile.objects.create(user=instance)
+
+      # accounts/apps.py
+
+      from django.apps import AppConfig
+      
+      class AccountsConfig(AppConfig):
+          default_auto_field = 'django.db.models.BigAutoField'
+          name = 'accounts'
+      
+          def ready(self):
+              import accounts.signals
+   ```
+   
+---
+
+
+### Django Middlewares and Sessions
+
+1. Какво е Middleware?
+   - Функционалност, която се изпълнява преди и/или след **всеки** рекуест
+   - Доста наподобява това да направим миксин, но с middleware-a няма нужда да го наследяваме никъде. Тоест става абстрактно.
+   - Реда на изпълнение е важен
+   - Middleware-ите се изпълняват top-down, преди заявката и bottom up след нея.
+   - Задава се в `settings.py`
+   ```py
+   MIDDLEWARES = [
+      ...,
+      Path.to.your.callable,  # callable - something that overwrites the method __call__
+      ...,
+   ]
+   ```
+
+   - Template for function middleware
+   ```py
+      def measure_time(get_response):
+         def middleware(request, *args, **kwargs): // looks like view
+            result = get_response()
+
+            return result
+
+      return middleware
+   ```
+
+   - Example
+   ```py
+      def measure_time(get_response):
+         def middleware(request, *args, **kwargs): // looks like view
+            start_time = time.time()
+            result = get_response(request)
+            end_time = time.time()
+
+            print(f"{request.path} executed in {end_time - start_time} seconds.")
+   
+            return result
+
+      return middleware
+   ```
+
+   - С клас
+   ```py
+   import time
+
+   class RequestTimingMiddleware(MiddlewareMixin):
+       """
+       Middleware to measure the time taken to process a request using process_request and process_response.
+       """
+
+       def __init__(self, get_response):
+           self.get_response = get_response
+   
+       def process_request(self, request):
+           # Start time before processing the request
+           self.start_time = time.time()
+   
+       def process_response(self, request, response):
+           # End time after processing the request
+           end_time = time.time()
+   
+           # Calculate the duration
+           duration = end_time - self.start_time
+   
+           # Log the duration (you can use any logging mechanism here)
+           print(f"Request to {request.path} took {duration:.4f} seconds.")
+   
+           return response
+
+   ```
+
+   - Освен process_request и process_response, имаме и process_view, което ни позволява да изпълняваме код точно преди view-то да се изпълни
+   - С други думи. Всеки middleware се вика три пъти. Преди request, точно преди view и след request.
+
+2. Session
+   - HTTP e stateless - не пази никаква информация, всяка заявка е сама за себе си.
+   - Сесията е начин по който сървъра може да пази информация за user-a.
+   - Сесията в Django е базово имплементирана.
+   - Имаме таблица `django_session`, която пази ключ- session key, който се подава на клиента, session_data - стойност с информация за потребителя, и expiration_date - дата, в която тази сесия изтича (default 2 седмици).
+   - Ако се логне от два браузъра, ще имаме две сесии за един потребител
+   - Сесията в базата е сериализирана, но когато я достъпваме във view тя се десериализира и можем да я третираме като обект
+   - Ключовете на обекти в сесията трябва да се string-ове и да нямат специални символи
+   ```py
+   def view_counter(request): 
+    # Check if the 'counter' key exists in the session
+    if 'counter' in request.session:
+        # Increment the counter
+        request.session['counter'] += 1
+    else:
+        # Initialize the counter if it's the first visit
+        request.session['counter'] = 1 
+
+    counter = request.session['counter']
+
+    return HttpResponse(f"View count: {counter}")
+   ```
+
+3. Cookies
+   - Метаданни за даннте
+   - Браузъра ги праща на всяка заявка, към домейна за който са заяазени
+   - Пример: cookie sessionId запазено за localhost, всеки път ще праща сесията
+   - Cookie-та без дата на изтичане се изтриват на изтичане на сесията на браузъра
+   - Няма как да направим вечно куки
+   - `request.COOKIES`
+   ```py
+   from django.http import HttpResponse
+   from django.utils.timezone import now
+   from django.views import View
+   
+   class SetTimeCookieView(View):
+       def dispatch(self, request, *args, **kwargs):
+           # Call the parent dispatch method to get the response
+           response = super().dispatch(request, *args, **kwargs)
+   
+           # Get the current time
+           current_time = now()
+   
+           # Check if the 'last_visit' cookie exists
+           last_visit = request.COOKIES.get('last_visit')
+           if last_visit:
+               # If the cookie exists, add a message about the last visit time
+               response.content += f"Your last visit was on: {last_visit}<br>".encode()
+           else:
+               # If this is the first visit, add a message indicating that
+               response.content += "This is your first visit!<br>".encode()
+   
+           # Set the current time as a cookie named 'last_visit'
+           response.set_cookie('last_visit', current_time.strftime('%Y-%m-%d %H:%M:%S'))
+   
+           # Optionally, set the cookie to expire in a certain number of seconds (e.g., 1 day)
+           # response.set_cookie('last_visit', current_time.strftime('%Y-%m-%d %H:%M:%S'), max_age=86400)
+   
+           # Add a message about setting the cookie
+           response.content += f"Setting the current time ({current_time.strftime('%Y-%m-%d %H:%M:%S')}) as a cookie.".encode()
+   
+           return response
+
+   ```
+
+
+4.  Web security
+   1. SQL инжекция (SQL Injection)
+      - SQL инжекцията е атака, при която злонамерен потребител въвежда зловреден SQL код в полета за въвеждане на данни (като форми за логин), с цел да манипулира или извлече данни от базата данни. Тази уязвимост възниква, когато приложението не валидира или не пречиства потребителския вход правилно.
+      
+   2. Кроссайт скриптиране (XSS)
+      - Кроссайт скриптирането е атака, при която злонамерен потребител вкарва зловреден скрипт (обикновено JavaScript) в уебсайт, който след това се изпълнява от браузъра на други потребители. Това може да доведе до кражба на бисквитки, манипулация на съдържание или пренасочване към зловредни сайтове.
+   
+   3. URL/HTTP манипулационни атаки (Промяна на параметри - Parameter Tampering)
+      - При този вид атака, нападателят манипулира URL и ли параметри в HTTP заявка, за да получи неоторизиран достъп до ресурси или да промени поведението на приложението. Например, промяна на параметър в URL, който определя цената на продукт, за да се закупи нещо на по-ниска цена.
+   
+   4. Кроссайт заявка за фалшификация (CSRF)
+      - CSRF атаката принуждава потребител, който е логнат в уеб приложение, да извърши неволно действие (като изпращане на форма или извършване на плащане), без неговото знание. Това се постига чрез изпращане на специално създадена връзка или форма към потребителя.
+   
+   5. Атаки с груба сила (Brute Force Attacks) и DDoS (Разпределени атаки за отказ от услуга)
+      - При атака с груба сила, нападателят автоматично опитва множество комбинации от пароли или ключове, докато не намери правилната. DDoS атаките целят да претоварят уебсайт или услуга с огромен брой заявки, което да доведе до забавяне или пълно прекъсване на услугата.
+   
+   6. Недостатъчен контрол на достъпа (Insufficient Access Control)
+      - Недостатъчният контрол на достъпа е уязвимост, при която потребители или системи получават достъп до ресурси или функционалности, за които нямат разрешение. Това може да доведе до изтичане на конфиденциална информация или изпълнение на неоторизирани действия.
+   
+   7. Липса на SSL (HTTPS) / Атаки Човек в средата (MITM)
+      - Липсата на SSL (HTTPS) прави връзката между потребителя и уебсайта незащитена, което позволява на нападател да прихване, промени или открадне данни (като пароли или лична информация) по време на предаването. MITM атаката възниква, когато нападателят се позиционира между комуникиращите страни и тайно следи или манипулира комуникацията.
+   
+   8. Фишинг/Социално инженерство (Phishing/Social Engineering)
+      - Фишингът и социалното инженерство са методи, при които нападателят измамно убеждава потребителя да разкрие чувствителна информация (като пароли или номера на кредитни карти) или да извърши определено действие (като инсталиране на зловреден софтуер), като се представя за доверено лице или организация.
+   
+---
+
+
 
