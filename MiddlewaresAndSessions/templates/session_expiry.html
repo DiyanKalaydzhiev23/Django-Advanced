@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Expiry</title>
+</head>
+<body>
+    <h1>Session Expiry</h1>
+
+    <p>Remaining session time: <strong>{{ remaining_seconds }}</strong> seconds</p>
+
+    {% if error_message %}
+        <p style="color: red;">{{ error_message }}</p>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        <label for="expiry_seconds">Set expiry (seconds):</label>
+        <input
+            id="expiry_seconds"
+            name="expiry_seconds"
+            type="number"
+            min="1"
+            placeholder="e.g. 300"
+            required
+        >
+
+        <button type="submit">Update</button>
+    </form>
+
+    <p><a href="{% url 'home' %}">Back to home page</a></p>
+</body>
+</html>

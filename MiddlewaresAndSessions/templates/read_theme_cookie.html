@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Read Theme Cookie</title>
+</head>
+<body>
+    <h1>Theme Cookie</h1>
+
+    <p>
+        Current theme value:
+        <strong>{% if theme_value %}{{ theme_value }}{% else %}not set{% endif %}</strong>
+    </p>
+
+    <form action="{% url 'set-theme-cookie' %}" method="get">
+        <button type="submit">Set Theme Cookie</button>
+    </form>
+
+    <p><a href="{% url 'home' %}">Back to home page</a></p>
+</body>
+</html>

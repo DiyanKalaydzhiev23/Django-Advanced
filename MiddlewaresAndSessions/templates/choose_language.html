@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose Language</title>
+</head>
+<body>
+    <h1>Choose Language</h1>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <label for="language">Preferred language:</label>
+        <select id="language" name="language">
+            {% for code, label in supported_languages.items %}
+                <option value="{{ code }}" {% if code == current_language %}selected{% endif %}>
+                    {{ label }} ({{ code }})
+                </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">Save</button>
+    </form>
+
+    <p><a href="{% url 'home' %}">Back to home page</a></p>
+</body>
+</html>

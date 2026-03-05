@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page</title>
+</head>
+<body>
+    <h1>Home Page</h1>
+
+    <p>{{ greeting_message }}</p>
+    <p>Current language: <strong>{{ current_language }}</strong></p>
+    
+    <a href="{% url 'flush-session' %}">Flush session</a>
+    <a href="{% url 'clear-session' %}">Clear session</a>
+    
+    <p><a href="{% url 'chose-language' %}">Change language</a></p>
+</body>
+</html>
