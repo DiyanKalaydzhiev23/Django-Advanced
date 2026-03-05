@@ -330,3 +330,173 @@
    
 ---
 
+
+### Django Middlewares and Sessions
+
+1. Какво е Middleware?
+   - Функционалност, която се изпълнява преди и/или след **всеки** рекуест
+   - Доста наподобява това да направим миксин, но с middleware-a няма нужда да го наследяваме никъде. Тоест става абстрактно.
+   - Реда на изпълнение е важен
+   - Middleware-ите се изпълняват top-down, преди заявката и bottom up след нея.
+   - Задава се в `settings.py`
+   ```py
+   MIDDLEWARES = [
+      ...,
+      Path.to.your.callable,  # callable - something that overwrites the method __call__
+      ...,
+   ]
+   ```
+
+   - Template for function middleware
+   ```py
+      def measure_time(get_response):
+         def middleware(request, *args, **kwargs): // looks like view
+            result = get_response()
+
+            return result
+
+      return middleware
+   ```
+
+   - Example
+   ```py
+      def measure_time(get_response):
+         def middleware(request, *args, **kwargs): // looks like view
+            start_time = time.time()
+            result = get_response(request)
+            end_time = time.time()
+
+            print(f"{request.path} executed in {end_time - start_time} seconds.")
+   
+            return result
+
+      return middleware
+   ```
+
+   - С клас
+   ```py
+   import time
+
+   class RequestTimingMiddleware(MiddlewareMixin):
+       """
+       Middleware to measure the time taken to process a request using process_request and process_response.
+       """
+
+       def __init__(self, get_response):
+           self.get_response = get_response
+   
+       def process_request(self, request):
+           # Start time before processing the request
+           self.start_time = time.time()
+   
+       def process_response(self, request, response):
+           # End time after processing the request
+           end_time = time.time()
+   
+           # Calculate the duration
+           duration = end_time - self.start_time
+   
+           # Log the duration (you can use any logging mechanism here)
+           print(f"Request to {request.path} took {duration:.4f} seconds.")
+   
+           return response
+
+   ```
+
+   - Освен process_request и process_response, имаме и process_view, което ни позволява да изпълняваме код точно преди view-то да се изпълни
+   - С други думи. Всеки middleware се вика три пъти. Преди request, точно преди view и след request.
+
+2. Session
+   - HTTP e stateless - не пази никаква информация, всяка заявка е сама за себе си.
+   - Сесията е начин по който сървъра може да пази информация за user-a.
+   - Сесията в Django е базово имплементирана.
+   - Имаме таблица `django_session`, която пази ключ- session key, който се подава на клиента, session_data - стойност с информация за потребителя, и expiration_date - дата, в която тази сесия изтича (default 2 седмици).
+   - Ако се логне от два браузъра, ще имаме две сесии за един потребител
+   - Сесията в базата е сериализирана, но когато я достъпваме във view тя се десериализира и можем да я третираме като обект
+   - Ключовете на обекти в сесията трябва да се string-ове и да нямат специални символи
+   ```py
+   def view_counter(request): 
+    # Check if the 'counter' key exists in the session
+    if 'counter' in request.session:
+        # Increment the counter
+        request.session['counter'] += 1
+    else:
+        # Initialize the counter if it's the first visit
+        request.session['counter'] = 1 
+
+    counter = request.session['counter']
+
+    return HttpResponse(f"View count: {counter}")
+   ```
+
+3. Cookies
+   - Метаданни за даннте
+   - Браузъра ги праща на всяка заявка, към домейна за който са заяазени
+   - Пример: cookie sessionId запазено за localhost, всеки път ще праща сесията
+   - Cookie-та без дата на изтичане се изтриват на изтичане на сесията на браузъра
+   - Няма как да направим вечно куки
+   - `request.COOKIES`
+   ```py
+   from django.http import HttpResponse
+   from django.utils.timezone import now
+   from django.views import View
+   
+   class SetTimeCookieView(View):
+       def dispatch(self, request, *args, **kwargs):
+           # Call the parent dispatch method to get the response
+           response = super().dispatch(request, *args, **kwargs)
+   
+           # Get the current time
+           current_time = now()
+   
+           # Check if the 'last_visit' cookie exists
+           last_visit = request.COOKIES.get('last_visit')
+           if last_visit:
+               # If the cookie exists, add a message about the last visit time
+               response.content += f"Your last visit was on: {last_visit}<br>".encode()
+           else:
+               # If this is the first visit, add a message indicating that
+               response.content += "This is your first visit!<br>".encode()
+   
+           # Set the current time as a cookie named 'last_visit'
+           response.set_cookie('last_visit', current_time.strftime('%Y-%m-%d %H:%M:%S'))
+   
+           # Optionally, set the cookie to expire in a certain number of seconds (e.g., 1 day)
+           # response.set_cookie('last_visit', current_time.strftime('%Y-%m-%d %H:%M:%S'), max_age=86400)
+   
+           # Add a message about setting the cookie
+           response.content += f"Setting the current time ({current_time.strftime('%Y-%m-%d %H:%M:%S')}) as a cookie.".encode()
+   
+           return response
+
+   ```
+
+
+4.  Web security
+   1. SQL инжекция (SQL Injection)
+      - SQL инжекцията е атака, при която злонамерен потребител въвежда зловреден SQL код в полета за въвеждане на данни (като форми за логин), с цел да манипулира или извлече данни от базата данни. Тази уязвимост възниква, когато приложението не валидира или не пречиства потребителския вход правилно.
+      
+   2. Кроссайт скриптиране (XSS)
+      - Кроссайт скриптирането е атака, при която злонамерен потребител вкарва зловреден скрипт (обикновено JavaScript) в уебсайт, който след това се изпълнява от браузъра на други потребители. Това може да доведе до кражба на бисквитки, манипулация на съдържание или пренасочване към зловредни сайтове.
+   
+   3. URL/HTTP манипулационни атаки (Промяна на параметри - Parameter Tampering)
+      - При този вид атака, нападателят манипулира URL и ли параметри в HTTP заявка, за да получи неоторизиран достъп до ресурси или да промени поведението на приложението. Например, промяна на параметър в URL, който определя цената на продукт, за да се закупи нещо на по-ниска цена.
+   
+   4. Кроссайт заявка за фалшификация (CSRF)
+      - CSRF атаката принуждава потребител, който е логнат в уеб приложение, да извърши неволно действие (като изпращане на форма или извършване на плащане), без неговото знание. Това се постига чрез изпращане на специално създадена връзка или форма към потребителя.
+   
+   5. Атаки с груба сила (Brute Force Attacks) и DDoS (Разпределени атаки за отказ от услуга)
+      - При атака с груба сила, нападателят автоматично опитва множество комбинации от пароли или ключове, докато не намери правилната. DDoS атаките целят да претоварят уебсайт или услуга с огромен брой заявки, което да доведе до забавяне или пълно прекъсване на услугата.
+   
+   6. Недостатъчен контрол на достъпа (Insufficient Access Control)
+      - Недостатъчният контрол на достъпа е уязвимост, при която потребители или системи получават достъп до ресурси или функционалности, за които нямат разрешение. Това може да доведе до изтичане на конфиденциална информация или изпълнение на неоторизирани действия.
+   
+   7. Липса на SSL (HTTPS) / Атаки Човек в средата (MITM)
+      - Липсата на SSL (HTTPS) прави връзката между потребителя и уебсайта незащитена, което позволява на нападател да прихване, промени или открадне данни (като пароли или лична информация) по време на предаването. MITM атаката възниква, когато нападателят се позиционира между комуникиращите страни и тайно следи или манипулира комуникацията.
+   
+   8. Фишинг/Социално инженерство (Phishing/Social Engineering)
+      - Фишингът и социалното инженерство са методи, при които нападателят измамно убеждава потребителя да разкрие чувствителна информация (като пароли или номера на кредитни карти) или да извърши определено действие (като инсталиране на зловреден софтуер), като се представя за доверено лице или организация.
+   
+---
+
+
