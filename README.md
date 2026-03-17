@@ -10,6 +10,10 @@
 
 - [Middlewares and Sessions](https://forms.gle/QdK1qzN3qo4HfkU3A)
 
+- [Deployment Setup](https://forms.gle/DAkp3wNGAAQfDj2r7)
+
+- [Django REST Basics](https://forms.gle/9ou2q8U97LmfQHMs9)
+
 ---
 
 ### Authentication and Autorization
@@ -501,5 +505,118 @@
    
 ---
 
+---
+
+### Django REST Basics
+
+1. Какво е API?
+   - Application Programing Interface
+   - Начин по-който ние можем да се свържем с дадена система, множеството от функционалности, които ние можем да използваме на една система
+   - Абстрактен пример: 
+     - Порта на телефон и кабел за зареждане. Телефона ни предоставя начин да го зареждаме (с кабел)
+
+2. Какво е REST?
+   - ReprEsentational State Transfer
+  
+3. REST API
+   - Множество от ендпойнти чрез, които ние можем да работим с дадена система 
+   - Предимно се комуникира с JSON, но реално можем да изпращаме данни под различни формати
+   - REST API e stateless, тоест трябва да пазим всичко, което апи-то ни връща на клиента
+   - В заключение можем да имаме различни клиенти:
+     - Мобилно приложение
+     - Уеб приложение
+     - Пералня
+     - ...
+   - Но те всички да изпращат заявки към едно API, и то да им връща резултат като JSON
+   - Примери:
+     - [Stripe](https://docs.stripe.com/api/connected-accounts)
+     - [Swapi](https://swapi.dev/)
+     - [PokeApi](https://pokeapi.co/)
+     - [Weather API](https://www.visualcrossing.com/weather-api?gad_source=1&gclid=CjwKCAjw59q2BhBOEiwAKc0ijb-nOtbeEpv4Mxv9iJdv6Okno4A4JNJiT1MATH_poGi5PHv2r32z9BoCF34QAvD_BwE)
+
+4. SPA vs MPA
+   - SPA - Single Page Application (Client Side Rendering)
+     - Приложение често направено с клиент на JS (в контекста на уеб), което за зареждане на нова информация изпраща заявка до API и не ярезарежда страницата.
+   - MPA - Multi Page Application (Server Side Rendering)
+     - Приложение, което всеки път, в който трябва да изпрати нова информация я рендерира в html на сървъра и врща като отговор този html. Това води до нуждата да презареждаме страницата, всеки път, когато нова информация е нужна или заявка трябва да бъде изпратена.
+    
+5. Methods
+   - В Django ползвахме форми, а формите в html поддържат само post и get
+   - Сега имаме възможност да ползваме всички методи
+  
+6. Django REST Framework
+   - Пакет, който ни позволява да създаваме REST API-та
+   - Доста близко до Django
+   - Дава ни сериализация
+     - Начин, по който нашия Django модел да се превърне в JSON обект и обратното
+   - Можем и да не го ползваме и да връщаме JSON през нормалното Django, но тогава нещата стават по-сложни, защото трябва да пренапишем всяко Generic view, понеже те връщат темплейт.
+   - `pip install djangorestframework`
+   ```py
+      INSTALLED_APPS = [
+         ...,
+         'rest_framework
+         ...,
+      ]
+   ```
+
+7. Serializers
+   - Начин, по който нашия Django модел да се превърне в JSON обект и обратно
+   - Както при формите имаме serializers и ModelSerializers
+   ```py
+   from rest_framework import serializers
+   from .models import Book
+   
+   class BookSerializer(serializers.ModelSerializer):
+       class Meta:
+           model = Book
+           fields = '__all__'
+
+   from rest_framework import generics
+   from .models import Book
+   from .serializers import BookSerializer
+   
+   class BookListCreate(generics.ListCreateAPIView):
+       queryset = Book.objects.all()
+       serializer_class = BookSerializer
+
+   // or with fbv
+
+   @api_view(['GET', 'POST'])
+   def book_list_create(request):
+       if request.method == 'GET':
+           books = Book.objects.all()
+           serializer = BookSerializer(books, many=True)
+
+           return Response(serializer.data)
+   
+       elif request.method == 'POST':
+           serializer = BookSerializer(data=request.data)
+   
+           if serializer.is_valid():
+               serializer.save()
+               return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+           return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+   ```
+
+5. Django views vs DRF views
+   - View
+   ```py
+      class SimpleView(View):
+          def get(self, request, *args, **kwargs):
+              context = {
+                  'message': 'Hello, this is a simple Django View!'
+              }
+              return render(request, 'simple_template.html', context)
+
+      class SimpleAPIView(APIView):
+          def get(self, request, *args, **kwargs):
+              data = {
+                  'message': 'Hello, this is a simple APIView response!'
+              }
+              return Response(data)
+   ```
+   
 
 
