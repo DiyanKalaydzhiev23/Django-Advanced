@@ -1,5 +1,9 @@
 # Theory tests
 
+# Useful links
+
+- [Django REST FE](https://github.com/DiyanKalaydzhiev23/JWT-Django-REST-FE-Softuni)
+
 ---
 
 # Plans
