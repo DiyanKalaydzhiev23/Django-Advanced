@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Task Monitor{% endblock %}
+
+{% block content %}
+    {# STEP 6: Shrink the task monitor to queue counts, status counts, and the active worker task list. #}
+    <section class="stats">
+        <article class="card stat-card">
+            <strong>Default Queue</strong>
+            <div>{{ queue_sizes.default }}</div>
+        </article>
+        <article class="card stat-card">
+            <strong>Heavy Queue</strong>
+            <div>{{ queue_sizes.heavy }}</div>
+        </article>
+        <article class="card stat-card">
+            <strong>Light Queue</strong>
+            <div>{{ queue_sizes.light }}</div>
+        </article>
+        <article class="card stat-card">
+            <strong>Commercials</strong>
+            <div>{{ pending_count }} pending / {{ processing_count }} processing / {{ completed_count }} completed / {{ failed_count }} failed</div>
+        </article>
+    </section>
+
+    <article class="card">
+        <h2>Active Celery Tasks</h2>
+        <p class="muted">This page refreshes every {{ auto_refresh_ms }} ms.</p>
+        <p class="muted">Queue counts show only waiting messages. Fast tasks can disappear from the queue immediately after a worker picks them up.</p>
+        {% if inspect_error %}
+            <p class="muted"><strong>Inspect unavailable:</strong> {{ inspect_error }}</p>
+        {% endif %}
+        <div class="list">
+            {% for task in running_tasks %}
+                <div>
+                    <strong>{{ task.name }}</strong>
+                    <div class="muted">{{ task.worker }}</div>
+                    <div class="code">ID: {{ task.id }}</div>
+                    <div class="code">Args: {{ task.args }}</div>
+                </div>
+            {% empty %}
+                <p>No active tasks reported right now.</p>
+            {% endfor %}
+        </div>
+    </article>
+
+    <article class="card">
+        <h2>Recent Queue Events</h2>
+        <p class="muted">These are the latest task events stored in Redis so completed light-queue work still leaves a visible trace.</p>
+        <div class="details">
+            <div>
+                <strong>Default Queue</strong>
+                <div class="list">
+                    {% for event in queue_events.default %}
+                        <div>
+                            <div><strong>{{ event.created_at }}</strong></div>
+                            <div>{{ event.message }}</div>
+                            <div class="muted">{{ event.task_name }}</div>
+                            {% if event.task_id %}<div class="code">Task ID: {{ event.task_id }}</div>{% endif %}
+                        </div>
+                    {% empty %}
+                        <p class="muted">No recent default queue events.</p>
+                    {% endfor %}
+                </div>
+            </div>
+            <div>
+                <strong>Heavy Queue</strong>
+                <div class="list">
+                    {% for event in queue_events.heavy %}
+                        <div>
+                            <div><strong>{{ event.created_at }}</strong></div>
+                            <div>{{ event.message }}</div>
+                            <div class="muted">{{ event.task_name }}</div>
+                            {% if event.commercial_id %}<div class="code">Commercial: {{ event.commercial_id }}</div>{% endif %}
+                            {% if event.task_id %}<div class="code">Task ID: {{ event.task_id }}</div>{% endif %}
+                        </div>
+                    {% empty %}
+                        <p class="muted">No recent heavy queue events.</p>
+                    {% endfor %}
+                </div>
+            </div>
+            <div>
+                <strong>Light Queue</strong>
+                <div class="list">
+                    {% for event in queue_events.light %}
+                        <div>
+                            <div><strong>{{ event.created_at }}</strong></div>
+                            <div>{{ event.message }}</div>
+                            <div class="muted">{{ event.task_name }}</div>
+                            {% if event.commercial_id %}<div class="code">Commercial: {{ event.commercial_id }}</div>{% endif %}
+                            {% if event.task_id %}<div class="code">Task ID: {{ event.task_id }}</div>{% endif %}
+                        </div>
+                    {% empty %}
+                        <p class="muted">No recent light queue events.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </article>
+    {# ----- #}
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Commercials{% endblock %}
+
+{% block content %}
+    {# STEP 4: Collapse the commercial list page into a compact status summary and a simple list of uploads. #}
+    <section class="stats">
+        <article class="card stat-card">
+            <strong>Pending</strong>
+            <div>{{ pending_count }}</div>
+        </article>
+        <article class="card stat-card">
+            <strong>Processing</strong>
+            <div>{{ processing_count }}</div>
+        </article>
+        <article class="card stat-card">
+            <strong>Completed</strong>
+            <div>{{ completed_count }}</div>
+        </article>
+        <article class="card stat-card">
+            <strong>Failed</strong>
+            <div>{{ failed_count }}</div>
+        </article>
+    </section>
+
+    <div class="card">
+        <p class="muted">This page refreshes every {{ auto_refresh_ms }} ms so you can watch each commercial move from pending to processing to completed or failed.</p>
+    </div>
+
+    <section class="list">
+        {% for commercial in commercials %}
+            <article class="card">
+                <div class="row">
+                    <h3>{{ commercial.slogan }}</h3>
+                    <span class="badge status-{{ commercial.processing_status }}">{{ commercial.get_processing_status_display }}</span>
+                </div>
+                <p class="muted">{{ commercial.body }}</p>
+                <div class="details">
+                    <div><strong>Uploaded</strong><br>{{ commercial.created_at|date:'M d, Y H:i' }}</div>
+                    <div><strong>Format</strong><br>{{ commercial.video_format|default:'Pending detection' }}</div>
+                    <div><strong>Duration</strong><br>{{ commercial.video_duration }} sec</div>
+                    <div><strong>Size</strong><br>{{ commercial.size_in_mb }} MB</div>
+                    <div><strong>File</strong><br>{% if commercial.video %}<a class="code" href="{{ commercial.video.url }}">{{ commercial.filename }}</a>{% else %}<span class="muted">No file</span>{% endif %}</div>
+                </div>
+                <form method="post" action="{% url 'advertisement_center:refresh_slogan' commercial.pk %}">
+                    {% csrf_token %}
+                    <button type="submit">Queue Light Slogan Task</button>
+                </form>
+            </article>
+        {% empty %}
+            <article class="card">
+                <p>No commercials yet. Upload one to test the background flow.</p>
+            </article>
+        {% endfor %}
+    </section>
+    {# ----- #}
+{% endblock %}

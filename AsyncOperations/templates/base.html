@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Async Exercise{% endblock %}</title>
+    <style>
+        /* # STEP 1: Replace the large custom UI shell with a smaller shared layout and a few reusable styles. */
+        :root {
+            --bg: #f6f2e8;
+            --card: rgba(255, 255, 255, 0.88);
+            --line: #d9d0be;
+            --text: #24211c;
+            --accent: #b45309;
+            --pending: #a16207;
+            --processing: #1d4ed8;
+            --completed: #166534;
+            --failed: #b91c1c;
+        }
+
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Trebuchet MS', sans-serif; color: var(--text); background: linear-gradient(180deg, #fcfaf5, var(--bg)); }
+        main { width: min(960px, calc(100% - 1.5rem)); margin: 0 auto; padding: 1.5rem 0 3rem; }
+        a { color: inherit; text-decoration: none; }
+        header, .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 1rem 1.1rem; margin-bottom: 1rem; }
+        header h1 { margin: 0 0 0.35rem; font-family: Georgia, serif; font-size: clamp(2rem, 5vw, 3rem); }
+        nav { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.9rem; }
+        .button, button { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 0.7rem 1rem; background: #fff; color: var(--text); font: inherit; cursor: pointer; }
+        .button-primary { background: var(--accent); border-color: var(--accent); color: white; }
+        .stats, .details { display: grid; gap: 0.8rem; }
+        .stats { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+        .details { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin: 1rem 0; }
+        .list { display: grid; gap: 1rem; }
+        .row { display: flex; justify-content: space-between; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
+        .badge { display: inline-block; padding: 0.35rem 0.7rem; border-radius: 999px; font-size: 0.82rem; font-weight: 700; text-transform: uppercase; }
+        .status-pending { background: #fef3c7; color: var(--pending); }
+        .status-processing { background: #dbeafe; color: var(--processing); }
+        .status-completed { background: #dcfce7; color: var(--completed); }
+        .status-failed { background: #fee2e2; color: var(--failed); }
+        .muted { color: #62594c; }
+        .message { background: #fff7ed; border: 1px solid #fdba74; border-radius: 14px; padding: 0.8rem 0.9rem; margin-bottom: 1rem; }
+        form { display: grid; gap: 0.9rem; }
+        input, textarea, select { width: 100%; padding: 0.75rem 0.85rem; border: 1px solid var(--line); border-radius: 12px; background: white; font: inherit; }
+        label { display: block; margin-bottom: 0.35rem; font-weight: 700; }
+        .errorlist { margin: 0.35rem 0 0; color: var(--failed); }
+        .code { font-family: Menlo, monospace; font-size: 0.9rem; word-break: break-word; }
+        @media (max-width: 640px) { main { width: min(100% - 1rem, 960px); } }
+        /* # ----- */
+    </style>
+</head>
+<body {% if auto_refresh_ms %}data-auto-refresh-ms="{{ auto_refresh_ms }}"{% endif %}>
+    {# STEP 2: Keep the shared page structure small while preserving navigation, messages, and auto refresh support. #}
+    <main>
+        <header>
+            <p class="muted">Async + PostgreSQL + Celery + Redis</p>
+            <h1>Commercial Processing</h1>
+            <p class="muted">Upload a file, push the heavy work to Celery, and watch the queue update without blocking the page.</p>
+            <nav>
+                <a class="button button-primary" href="{% url 'advertisement_center:create' %}">Upload Commercial</a>
+                <a class="button" href="{% url 'advertisement_center:index' %}">Commercials</a>
+                <a class="button" href="{% url 'advertisement_center:tasks' %}">Task Monitor</a>
+            </nav>
+        </header>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        /* # STEP 3: Refresh live monitoring pages every few seconds while keeping the UI interaction simple. */
+        const refreshMs = Number(document.body.dataset.autoRefreshMs || 0);
+        if (refreshMs > 0) {
+            window.setTimeout(() => window.location.reload(), refreshMs);
+        }
+        /* # ----- */
+    </script>
+    {# ----- #}
+</body>
+</html>

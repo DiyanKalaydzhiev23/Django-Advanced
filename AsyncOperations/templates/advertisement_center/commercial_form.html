@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload Commercial{% endblock %}
+
+{% block content %}
+    {# STEP 5: Reduce the upload page to one form card and one short workflow note. #}
+    <article class="card">
+        <h2>Upload a Commercial</h2>
+        <p class="muted">The save is immediate, and the heavy video work is sent to Celery after the database commit finishes.</p>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+                <div>
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+            {% endfor %}
+            <button type="submit" class="button-primary">Save and Queue Task</button>
+        </form>
+    </article>
+
+    <article class="card">
+        <strong>Quick test notes</strong>
+        <p class="muted">Use a filename containing <span class="code">fail</span> to force retries and a final failed status. Successful videos trigger a console email, and periodic cleanup tasks are handled by Celery Beat.</p>
+    </article>
+    {# ----- #}
+{% endblock %}
