@@ -964,7 +964,7 @@
    
    if __name__ == "__main__":
        asyncio.run(main())
-```
+   ```
 
 4. Celery
    - Опашка от задачи
