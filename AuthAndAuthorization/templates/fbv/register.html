@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes - Register</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            background: #f4f5f7;
+            color: #222;
+            margin: 0;
+        }
+
+        header {
+            background: #2d3e50;
+            color: #fff;
+            padding: 1rem 2rem;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+
+        main {
+            max-width: 400px;
+            margin: 3rem auto;
+            padding: 2rem;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        main h2 {
+            margin-top: 0;
+        }
+
+        .errors {
+            list-style: none;
+            padding: 0.75rem 1rem;
+            margin: 0 0 1.5rem;
+            border-radius: 6px;
+            background: #fdecea;
+            color: #8a1c1c;
+        }
+
+        .field {
+            margin-bottom: 1rem;
+        }
+
+        .field label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+        }
+
+        .field input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .field input:focus {
+            outline: none;
+            border-color: #2d3e50;
+        }
+
+        .field.has-error input {
+            border-color: #c0392b;
+        }
+
+        .field-errors {
+            list-style: none;
+            padding: 0;
+            margin: 0.35rem 0 0;
+            color: #c0392b;
+            font-size: 0.85rem;
+        }
+
+        .help {
+            margin-top: 0.35rem;
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .help ul {
+            margin: 0;
+            padding-left: 1.1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.7rem;
+            margin-top: 0.5rem;
+            border: none;
+            border-radius: 6px;
+            background: #2d3e50;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #3c5268;
+        }
+
+        .alt {
+            margin: 1.5rem 0 0;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .alt a {
+            color: #2d3e50;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Notes</h1>
+</header>
+
+<main>
+    <h2>Create an account</h2>
+
+    {% if form.non_field_errors %}
+        <ul class="errors">
+            {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        {% for field in form %}
+            <div class="field{% if field.errors %} has-error{% endif %}">
+                {{ field.label_tag }}
+                {{ field }}
+
+                {% if field.errors %}
+                    <ul class="field-errors">
+                        {% for error in field.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                {% if field.help_text %}
+                    <div class="help">{{ field.help_text|safe }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <button type="submit">Register</button>
+    </form>
+
+    <p class="alt">Already have an account? <a href="{% url 'fbv-login' %}">Log in</a></p>
+</main>
+</body>
+</html>

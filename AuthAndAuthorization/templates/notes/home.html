@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes - Home</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            background: #f4f5f7;
+            color: #222;
+            margin: 0;
+        }
+
+        header {
+            background: #2d3e50;
+            color: #fff;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+
+        main {
+            max-width: 720px;
+            margin: 3rem auto;
+            padding: 2rem;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .status {
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        .status.auth {
+            background: #e6f4ea;
+            color: #1e6b34;
+        }
+
+        .status.anon {
+            background: #fdecea;
+            color: #8a1c1c;
+        }
+
+        dl {
+            display: grid;
+            grid-template-columns: max-content 1fr;
+            gap: 0.5rem 1rem;
+        }
+
+        dt {
+            font-weight: 600;
+        }
+
+        dd {
+            margin: 0;
+        }
+
+        .notes {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e3e5e8;
+        }
+
+        .notes h3 {
+            margin: 0 0 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .count {
+            padding: 0.1rem 0.55rem;
+            border-radius: 999px;
+            background: #e3e5e8;
+            color: #444;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .note-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .note {
+            padding: 1rem 1.25rem;
+            border: 1px solid #e3e5e8;
+            border-left: 4px solid #95a5b5;
+            border-radius: 6px;
+            background: #fafbfc;
+        }
+
+        .note.own {
+            border-left-color: #2d3e50;
+        }
+
+        .note-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 1rem;
+        }
+
+        .note h4 {
+            margin: 0;
+            font-size: 1.05rem;
+        }
+
+        .owner {
+            color: #666;
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+
+        .note p {
+            margin: 0.5rem 0 0;
+            color: #444;
+            line-height: 1.5;
+        }
+
+        .empty {
+            color: #666;
+            font-style: italic;
+        }
+
+        .logout-form {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e3e5e8;
+            text-align: right;
+        }
+
+        .logout-btn {
+            padding: 0.6rem 1.4rem;
+            border: 1px solid #c0392b;
+            border-radius: 6px;
+            background: #fff;
+            color: #c0392b;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+            color: #fff;
+        }
+
+        .logout-btn:focus-visible {
+            outline: 2px solid #c0392b;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Notes</h1>
+    <span>
+        {% if user.is_authenticated %}
+            Hello, {{ user.username }}
+        {% else %}
+            Hello, guest
+        {% endif %}
+    </span>
+</header>
+
+<main>
+    <h2>Welcome to Notes</h2>
+
+        <p class="status auth">You are logged in.</p>
+
+        <section class="notes">
+            <h3>Notes <span class="count">{{ note_list|length }}</span></h3>
+
+            {% if note_list %}
+                <ul class="note-list">
+                    {% for note in note_list %}
+                        <li class="note{% if note.owner == user %} own{% endif %}">
+                            <div class="note-head">
+                                <h4>{{ note.title }}</h4>
+                                <span class="owner">
+                                    {% if note.owner == user %}You{% else %}{{ note.owner.username }}{% endif %}
+                                </span>
+                            </div>
+                            <p>{{ note.body|linebreaksbr }}</p>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="empty">No notes yet.</p>
+            {% endif %}
+        </section>
+
+        <form class="logout-form" method="post" action="{% url 'cbv-logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="logout-btn">Log out</button>
+        </form>
+</main>
+</body>
+</html>
