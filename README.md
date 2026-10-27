@@ -1,5 +1,3 @@
----
-
 # Plans
 
 - [Authentication and Autorization](https://forms.gle/E63W2cpVYng1fQXU9)
