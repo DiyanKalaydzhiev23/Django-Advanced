@@ -109,13 +109,7 @@
 
     <form method="post">
         {% csrf_token %}
-
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" value="{{ request.POST.username }}" autocomplete="username" required autofocus>
-
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" autocomplete="current-password" required>
-
+        {{ form }}
         <button type="submit">Log in</button>
     </form>
 </main>
