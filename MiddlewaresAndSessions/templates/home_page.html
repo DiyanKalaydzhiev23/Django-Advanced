@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Home page</title>
+</head>
+<body>
+    <h1>{{ greeting_message }}</h1>
+    <form method="post" action="{% url 'language' %}">
+        {% csrf_token %}
+        <label>Preferred Language</label>
+        <select id="language" name="language">
+            {% for code, label in supported_languages.items %}
+                <option value="{{ code }}" {% if code == current_language %}selected{% endif %}>
+                    {{ label }} ({{ code }})
+                </option>
+            {% endfor %}
+        </select> 
+        <button>Save</button>
+    </form>
+    
+    <h1>Session expires after: {{ remaining_seconds }} seconds</h1>
+    
+    <form method="post" action="{% url 'session-expiry' %}">
+        {{ error_message }}
+        {% csrf_token %}
+        <input 
+            id="expiry_session" 
+            name="expiry_seconds" 
+            type="number" 
+            min="1"
+            placeholder="e.g. 300"
+            required
+        />
+        <button>Submit</button>
+    </form>
+    
+    <form action="{% url 'flush' %}" method="post">
+        {% csrf_token %}
+        <button>Flush</button>
+    </form>
+
+    <p>Signature valid: {{ signature_valid }}</p>
+    <p>Verified value: {{ verified_value }}</p>
+
+    <form method="post" action="{% url 'set-role' %}">
+        {% csrf_token %}
+        <button>Set role</button>
+    </form>
+</body> 
+</html>
