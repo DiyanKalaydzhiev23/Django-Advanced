@@ -1,3 +1,9 @@
+# Side Projects
+
+- [Django REST FE](https://github.com/DiyanKalaydzhiev23/JWT-Django-REST-FE-Softuni)
+
+---
+
 # Plans
 
 - [Authentication and Autorization](https://forms.gle/E63W2cpVYng1fQXU9)
